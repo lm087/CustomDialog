@@ -1,0 +1,12 @@
+<resources>
+    <style name="Widget.CustomDialog.EditText" parent="android:Widget.Material.EditText">
+        <item name="android:background">@drawable/edit_text_underline</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">0dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
+    </style>
+</resources>

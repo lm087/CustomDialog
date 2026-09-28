@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.CustomDialog.System" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@android:color/system_accent1_600</item>
+        <item name="android:colorPrimary">@android:color/system_accent1_600</item>
+    </style>
+</resources>

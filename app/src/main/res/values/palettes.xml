@@ -1,0 +1,38 @@
+<resources>
+    <style name="Theme.CustomDialog.Red" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_red</item>
+        <item name="android:colorPrimary">@color/primary_red</item>
+    </style>
+    <style name="Theme.CustomDialog.Orange" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_orange</item>
+        <item name="android:colorPrimary">@color/primary_orange</item>
+    </style>
+    <style name="Theme.CustomDialog.Yellow" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_yellow</item>
+        <item name="android:colorPrimary">@color/primary_yellow</item>
+    </style>
+    <style name="Theme.CustomDialog.Green" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_green</item>
+        <item name="android:colorPrimary">@color/primary_green</item>
+    </style>
+    <style name="Theme.CustomDialog.Blue" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_blue</item>
+        <item name="android:colorPrimary">@color/primary_blue</item>
+    </style>
+    <style name="Theme.CustomDialog.Indigo" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_indigo</item>
+        <item name="android:colorPrimary">@color/primary_indigo</item>
+    </style>
+    <style name="Theme.CustomDialog.Purple" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_purple</item>
+        <item name="android:colorPrimary">@color/primary_purple</item>
+    </style>
+    <style name="Theme.CustomDialog.Black" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_black</item>
+        <item name="android:colorPrimary">@color/primary_black</item>
+    </style>
+    <style name="Theme.CustomDialog.White" parent="Theme.CustomDialog">
+        <item name="android:colorAccent">@color/accent_white</item>
+        <item name="android:colorPrimary">@color/primary_white</item>
+    </style>
+</resources>

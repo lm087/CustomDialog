@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name" translatable="false">Custom Dialog</string>
+    <string name="timing" translatable="false">Timing</string>
+    <string name="accent_color" translatable="false">Accent color</string>
+    <string name="accent_red" translatable="false">Red</string>
+    <string name="accent_orange" translatable="false">Orange</string>
+    <string name="accent_yellow" translatable="false">Yellow</string>
+    <string name="accent_green" translatable="false">Green</string>
+    <string name="accent_blue" translatable="false">Blue</string>
+    <string name="accent_indigo" translatable="false">Indigo</string>
+    <string name="accent_purple" translatable="false">Purple</string>
+    <string name="accent_black" translatable="false">Black</string>
+    <string name="accent_white" translatable="false">White</string>
+    <string name="accent_system" translatable="false">System accent</string>
+    <string name="countdown_remaining" translatable="false">Cross-App · %1$ds</string>
+    <string name="dialog_type" translatable="false">Type</string>
+    <string name="dialog_title" translatable="false">Title</string>
+    <string name="dialog_message" translatable="false">Message</string>
+    <string name="dialog_items" translatable="false">Items (one per line)</string>
+    <string name="input_hint" translatable="false">Hint</string>
+    <string name="input_default" translatable="false">Default text</string>
+    <string name="positive_button" translatable="false">Positive button</string>
+    <string name="negative_button" translatable="false">Negative button</string>
+    <string name="neutral_button" translatable="false">Neutral button</string>
+    <string name="cancelable" translatable="false">Cancelable</string>
+    <string name="delay_seconds" translatable="false">Delay (Cross-App only, seconds)</string>
+    <string name="cancel" translatable="false">Cancel</string>
+    <string name="in_app" translatable="false">In-App</string>
+    <string name="cross_app" translatable="false">Cross-App</string>
+    <string name="hide_buttons_behavior" translatable="false">Hide buttons &amp; behavior</string>
+    <string name="buttons_behavior" translatable="false">Buttons &amp; behavior</string>
+    <string name="expanded" translatable="false">Expanded</string>
+    <string name="collapsed" translatable="false">Collapsed</string>
+    <string name="countdown_stopped" translatable="false">Previous countdown stopped.</string>
+    <string name="overlay_permission_needed" translatable="false">Allow display over other apps, then tap Cross-App.</string>
+    <string name="overlay_start_error" translatable="false">Cannot start overlay. Check permission and try again.</string>
+    <string name="overlay_settings_error" translatable="false">Allow display over other apps in Android Settings.</string>
+    <string name="dialog_showing" translatable="false">Dialog showing</string>
+    <string-array name="dialog_types" translatable="false">
+        <item>AlertDialog</item>
+        <item>Items</item>
+        <item>Single choice</item>
+        <item>Multi choice</item>
+        <item>EditText</item>
+        <item>DatePickerDialog</item>
+        <item>TimePickerDialog</item>
+    </string-array>
+</resources>

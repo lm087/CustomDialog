@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#66AAFF</color>
+    <color name="surface">#181818</color>
+    <color name="text_primary">#EEEEEE</color>
+    <color name="text_secondary">#BDBDBD</color>
+    <color name="divider">#424242</color>
+    <color name="error">#FFB4AB</color>
+    <color name="accent_red">#FF8A80</color>
+    <color name="primary_red">#F44336</color>
+    <color name="accent_orange">#FFB74D</color>
+    <color name="primary_orange">#FF9800</color>
+    <color name="accent_yellow">#FFF176</color>
+    <color name="primary_yellow">#FFEB3B</color>
+    <color name="accent_green">#81C784</color>
+    <color name="primary_green">#4CAF50</color>
+    <color name="accent_blue">#66AAFF</color>
+    <color name="primary_blue">#007AFF</color>
+    <color name="accent_indigo">#9FA8DA</color>
+    <color name="primary_indigo">#3F51B5</color>
+    <color name="accent_purple">#CE93D8</color>
+    <color name="primary_purple">#9C27B0</color>
+    <color name="accent_black">#BDBDBD</color>
+    <color name="primary_black">#000000</color>
+    <color name="accent_white">#FFFFFF</color>
+    <color name="primary_white">#FFFFFF</color>
+</resources>

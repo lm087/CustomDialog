@@ -1,0 +1,19 @@
+<resources>
+    <item name="kind" type="id" />
+    <item name="title" type="id" />
+    <item name="message" type="id" />
+    <item name="options" type="id" />
+    <item name="input_hint" type="id" />
+    <item name="input_default" type="id" />
+    <item name="positive" type="id" />
+    <item name="negative" type="id" />
+    <item name="neutral" type="id" />
+    <item name="cancelable" type="id" />
+    <item name="delay" type="id" />
+    <item name="preview" type="id" />
+    <item name="start" type="id" />
+    <item name="cancel_pending" type="id" />
+    <item name="advanced" type="id" />
+    <item name="scroll" type="id" />
+    <item name="result" type="id" />
+</resources>
