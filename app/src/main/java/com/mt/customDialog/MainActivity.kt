@@ -79,12 +79,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var errorText: TextView
     private var awaitingPermission: DialogConfig? = null
     private val handler = Handler(Looper.getMainLooper())
-    private val ticker = object : Runnable {
-        override fun run() {
-            refreshStatus()
-            handler.postDelayed(this, 1_000L)
-        }
-    }
+    private var statusUpdatesActive = false
+    private val ticker = object : Runnable { override fun run() { refreshStatus()}}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(AppTheme.style(this))
@@ -163,8 +159,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         numberEnabled = contentToggle(contentSection, R.string.content_number_picker, R.id.content_number_picker, config.numberPickerEnabled)
         numberSection = column()
         numberMinField = field(numberSection, getString(R.string.range_minimum), config.numberMinText, R.id.number_min).apply { inputType = InputType.TYPE_CLASS_NUMBER }
-        numberMaxField = field(numberSection, getString(R.string.range_maximum), config.numberMaxText, R.id.number_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
         numberValueField = field(numberSection, getString(R.string.range_initial), config.numberValueText, R.id.number_value).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        numberMaxField = field(numberSection, getString(R.string.range_maximum), config.numberMaxText, R.id.number_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
         contentSection.addView(numberSection)
         progressEnabled = contentToggle(contentSection, R.string.content_progress, R.id.content_progress, config.progressEnabled)
         progressSection = column()
@@ -177,8 +173,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         seekEnabled = contentToggle(contentSection, R.string.content_seek_bar, R.id.content_seek_bar, config.seekBarEnabled)
         seekSection = column()
         seekMinField = field(seekSection, getString(R.string.range_minimum), config.seekMinText, R.id.seek_min).apply { inputType = InputType.TYPE_CLASS_NUMBER }
-        seekMaxField = field(seekSection, getString(R.string.range_maximum), config.seekMaxText, R.id.seek_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
         seekValueField = field(seekSection, getString(R.string.range_initial), config.seekValueText, R.id.seek_value).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        seekMaxField = field(seekSection, getString(R.string.range_maximum), config.seekMaxText, R.id.seek_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
         contentSection.addView(seekSection)
         form.addView(contentSection)
 
@@ -335,7 +331,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     fun onDialogResult(result: String) { if (DialogState.snapshot(this).status == DialogState.IDLE) DialogState.finish(this, result)}
 
     private fun refreshStatus() {
+        handler.removeCallbacks(ticker)
         val state = DialogState.snapshot(this)
+        if (statusUpdatesActive && state.status == DialogState.COUNTDOWN) handler.postDelayed(ticker, 1_000L)
         val running = state.status != DialogState.IDLE
         startButton.isEnabled = !running
         previewButton.isEnabled = !running
@@ -357,12 +355,14 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     override fun onStart() {
         super.onStart()
         DialogState.preferences(this).registerOnSharedPreferenceChangeListener(this)
-        handler.post(ticker)
+        statusUpdatesActive = true
+        refreshStatus()
     }
 
     override fun onResume() { super.onResume(); refreshStatus() }
 
     override fun onStop() {
+        statusUpdatesActive = false
         readConfig().saveDraft(this)
         handler.removeCallbacks(ticker)
         DialogState.preferences(this).unregisterOnSharedPreferenceChangeListener(this)

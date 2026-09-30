@@ -14,8 +14,9 @@ data class DialogConfig(val kind: DialogKind = DialogKind.ALERT_DIALOG, val titl
         if (delayMillis == null) return "Delay must be a whole number from 0 to 86400."
         if (kind != DialogKind.ALERT_DIALOG) return if (positiveLabel.isBlank()) "A positive button label is required." else null
         if (listMode != ListMode.NONE) {
-            if (options.isEmpty()) return "Enter at least one item, one per line."
-            if (options.size > 100) return "Use no more than 100 items."
+            val items = options
+            if (items.isEmpty()) return "Enter at least one item, one per line."
+            if (items.size > 100) return "Use no more than 100 items."
         }
         if (progressEnabled && !progressIndeterminate && progressValue == null) return "Progress must be a whole number from 0 to 100."
         if (numberPickerEnabled && numberRange == null) return "NumberPicker: use whole numbers from 0 to 1000000, with minimum ≤ initial value ≤ maximum."

@@ -37,8 +37,9 @@ object NativeDialogs {
 
     private fun createAlert(context: Context, config: DialogConfig, onResult: (String) -> Unit): AlertDialog {
         val builder = AlertDialog.Builder(context)
-        val options = config.options
         val isChoiceDialog = config.listMode != ListMode.NONE
+        val options = if (isChoiceDialog) config.options else emptyList()
+        val seekRange = if (config.seekBarEnabled) requireNotNull(config.seekRange) else null
         if (isChoiceDialog) {
             metadataView(builder.context, config)?.let(builder::setCustomTitle)
         } else {
@@ -68,7 +69,7 @@ object NativeDialogs {
         } else null
         val seek = if (config.seekBarEnabled) SeekBar(builder.context).apply {
             id = R.id.dialog_seek_bar
-            val range = requireNotNull(config.seekRange)
+            val range = requireNotNull(seekRange)
             max = range.maximum - range.minimum
             progress = range.initial - range.minimum
             minimumHeight = dp(context, 48)
@@ -78,7 +79,7 @@ object NativeDialogs {
             number?.clearFocus()
             return number?.let { "NumberPicker: ${it.value}" }
         }
-        fun seekResult(): String? = seek?.let { "SeekBar: ${it.progress + requireNotNull(config.seekRange).minimum}" }
+        fun seekResult(): String? = seek?.let { "SeekBar: ${it.progress + requireNotNull(seekRange).minimum}" }
 
         fun inputResult(): String? = input?.text?.toString()?.let { if (it.isEmpty()) "Empty input" else "Input: $it" }
         when (config.listMode) {
@@ -117,7 +118,7 @@ object NativeDialogs {
                 val valueLabel = TextView(builder.context).apply {
                     labelFor = R.id.dialog_seek_bar
                     gravity = Gravity.END
-                    text = context.getString(R.string.seek_current, bar.progress + requireNotNull(config.seekRange).minimum, requireNotNull(config.seekRange).maximum)
+                    text = context.getString(R.string.seek_current, bar.progress + requireNotNull(seekRange).minimum, requireNotNull(seekRange).maximum)
                 }
                 container.addView(bar, LinearLayout.LayoutParams(-1, -2).apply {
                     leftMargin = -bar.paddingLeft
@@ -125,7 +126,7 @@ object NativeDialogs {
                 })
                 container.addView(valueLabel)
                 bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) { valueLabel.text = context.getString(R.string.seek_current, progress + requireNotNull(config.seekRange).minimum, requireNotNull(config.seekRange).maximum)}
+                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) { valueLabel.text = context.getString(R.string.seek_current, progress + requireNotNull(seekRange).minimum, requireNotNull(seekRange).maximum)}
                     override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
                     override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
                 })
