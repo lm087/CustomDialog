@@ -6,6 +6,7 @@ import android.app.Dialog
 import android.app.DialogFragment
 import android.content.DialogInterface
 import android.os.Bundle
+import android.widget.NumberPicker
 
 class PreviewDialogFragment : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +16,20 @@ class PreviewDialogFragment : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val config = arguments?.toDialogConfig() ?: DialogConfig()
-        return NativeDialogs.create(activity, config, ::reportResult).apply { setOnCancelListener(null)}
+        return NativeDialogs.create(activity, config, ::reportResult).apply { setOnCancelListener(null) }
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        if (savedInstanceState?.containsKey("numberValue") == true) dialog?.findViewById<NumberPicker>(R.id.dialog_number_picker)?.value = savedInstanceState.getInt("numberValue")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        dialog?.findViewById<NumberPicker>(R.id.dialog_number_picker)?.let {
+            it.clearFocus()
+            outState.putInt("numberValue", it.value)
+        }
+        super.onSaveInstanceState(outState)
     }
 
     override fun onCancel(dialog: DialogInterface) {

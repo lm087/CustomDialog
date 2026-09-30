@@ -160,7 +160,7 @@ class OverlayDialogService : Service() {
             remainingMillis <= 0L -> "Preparing…"
             else -> "${formatRemaining(remainingMillis)} remaining"
         }
-        builder.setSmallIcon(R.drawable.ic_dialog).setContentTitle(if (remainingMillis == null) "Dialog showing" else "Countdown").setContentText(content).setContentIntent(openApp).setCategory(Notification.CATEGORY_SERVICE).setVisibility(Notification.VISIBILITY_PRIVATE).setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false).addAction(Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel), "Cancel", cancel).build())
+        builder.setSmallIcon(android.R.drawable.sym_def_app_icon).setContentTitle(if (remainingMillis == null) "Dialog showing" else "Countdown").setContentText(content).setContentIntent(openApp).setCategory(Notification.CATEGORY_SERVICE).setVisibility(Notification.VISIBILITY_PRIVATE).setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false).addAction(Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel), "Cancel", cancel).build())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
         return builder.build()
     }

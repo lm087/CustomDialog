@@ -20,6 +20,14 @@ fun DialogConfig.toBundle() = Bundle().apply {
     putString("optionsText", optionsText)
     putString("inputHint", inputHint)
     putString("inputDefault", inputDefault)
+    putBoolean("numberPickerEnabled", numberPickerEnabled)
+    putBoolean("seekBarEnabled", seekBarEnabled)
+    putString("numberMinText", numberMinText)
+    putString("numberMaxText", numberMaxText)
+    putString("numberValueText", numberValueText)
+    putString("seekMinText", seekMinText)
+    putString("seekMaxText", seekMaxText)
+    putString("seekValueText", seekValueText)
     putBoolean("cancelable", cancelable)
     putString("delayText", delayText)
 }
@@ -41,6 +49,14 @@ fun Bundle.toDialogConfig(): DialogConfig {
         optionsText = getString("optionsText", defaults.optionsText),
         inputHint = getString("inputHint", defaults.inputHint),
         inputDefault = getString("inputDefault", defaults.inputDefault),
+        numberPickerEnabled = getBoolean("numberPickerEnabled", defaults.numberPickerEnabled),
+        seekBarEnabled = getBoolean("seekBarEnabled", defaults.seekBarEnabled),
+        numberMinText = getString("numberMinText", defaults.numberMinText),
+        numberMaxText = getString("numberMaxText", defaults.numberMaxText),
+        numberValueText = getString("numberValueText", defaults.numberValueText),
+        seekMinText = getString("seekMinText", defaults.seekMinText),
+        seekMaxText = getString("seekMaxText", defaults.seekMaxText),
+        seekValueText = getString("seekValueText", defaults.seekValueText),
         cancelable = getBoolean("cancelable", defaults.cancelable),
         delayText = getString("delayText", defaults.delayText),
     )
@@ -58,4 +74,4 @@ fun loadDraft(context: Context): DialogConfig {
     return bundle.toDialogConfig()
 }
 
-private val booleanKeys = setOf("cancelable", "textInputEnabled", "progressEnabled", "progressIndeterminate")
+private val booleanKeys = setOf("numberPickerEnabled", "seekBarEnabled", "cancelable", "textInputEnabled", "progressEnabled", "progressIndeterminate")

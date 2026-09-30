@@ -51,4 +51,10 @@
         <item>setMultiChoiceItems</item>
         <item>setSingleChoiceItems</item>
     </string-array>
+    <string name="content_number_picker" translatable="false">NumberPicker</string>
+    <string name="content_seek_bar" translatable="false">SeekBar</string>
+    <string name="range_minimum" translatable="false">Minimum</string>
+    <string name="range_maximum" translatable="false">Maximum</string>
+    <string name="range_initial" translatable="false">Initial value</string>
+    <string name="seek_current" translatable="false">%1$d / %2$d</string>
 </resources>

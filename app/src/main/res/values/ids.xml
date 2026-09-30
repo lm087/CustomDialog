@@ -22,4 +22,14 @@
     <item name="progress_indeterminate" type="id" />
     <item name="progress_value" type="id" />
     <item name="dialog_progress" type="id" />
+    <item name="content_number_picker" type="id" />
+    <item name="content_seek_bar" type="id" />
+    <item name="dialog_number_picker" type="id" />
+    <item name="dialog_seek_bar" type="id" />
+    <item name="number_min" type="id" />
+    <item name="number_max" type="id" />
+    <item name="number_value" type="id" />
+    <item name="seek_min" type="id" />
+    <item name="seek_max" type="id" />
+    <item name="seek_value" type="id" />
 </resources>

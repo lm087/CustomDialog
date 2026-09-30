@@ -50,6 +50,16 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var progressIndeterminate: CheckBox
     private lateinit var progressValueSection: LinearLayout
     private lateinit var progressField: EditText
+    private lateinit var numberEnabled: CheckBox
+    private lateinit var numberSection: LinearLayout
+    private lateinit var numberMinField: EditText
+    private lateinit var numberMaxField: EditText
+    private lateinit var numberValueField: EditText
+    private lateinit var seekEnabled: CheckBox
+    private lateinit var seekSection: LinearLayout
+    private lateinit var seekMinField: EditText
+    private lateinit var seekMaxField: EditText
+    private lateinit var seekValueField: EditText
     private lateinit var titleField: EditText
     private lateinit var messageField: EditText
     private lateinit var optionsField: EditText
@@ -150,6 +160,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         optionsSection.addView(listMode)
         optionsField = field(optionsSection, getString(R.string.dialog_items), config.optionsText, R.id.options, multiline = true)
         contentSection.addView(optionsSection)
+        numberEnabled = contentToggle(contentSection, R.string.content_number_picker, R.id.content_number_picker, config.numberPickerEnabled)
+        numberSection = column()
+        numberMinField = field(numberSection, getString(R.string.range_minimum), config.numberMinText, R.id.number_min).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        numberMaxField = field(numberSection, getString(R.string.range_maximum), config.numberMaxText, R.id.number_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        numberValueField = field(numberSection, getString(R.string.range_initial), config.numberValueText, R.id.number_value).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        contentSection.addView(numberSection)
         progressEnabled = contentToggle(contentSection, R.string.content_progress, R.id.content_progress, config.progressEnabled)
         progressSection = column()
         progressIndeterminate = contentToggle(progressSection, R.string.progress_indeterminate, R.id.progress_indeterminate, config.progressIndeterminate)
@@ -158,6 +174,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         progressField.inputType = InputType.TYPE_CLASS_NUMBER
         progressSection.addView(progressValueSection)
         contentSection.addView(progressSection)
+        seekEnabled = contentToggle(contentSection, R.string.content_seek_bar, R.id.content_seek_bar, config.seekBarEnabled)
+        seekSection = column()
+        seekMinField = field(seekSection, getString(R.string.range_minimum), config.seekMinText, R.id.seek_min).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        seekMaxField = field(seekSection, getString(R.string.range_maximum), config.seekMaxText, R.id.seek_max).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        seekValueField = field(seekSection, getString(R.string.range_initial), config.seekValueText, R.id.seek_value).apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        contentSection.addView(seekSection)
         form.addView(contentSection)
 
         form.addView(sectionHeading(R.string.buttons_behavior))
@@ -212,7 +234,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = updateKind()
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
-        listOf(listEnabled, textInputEnabled, progressEnabled, progressIndeterminate).forEach { it.setOnCheckedChangeListener { _, _ -> updateKind() }}
+        listOf(listEnabled, textInputEnabled, numberEnabled, progressEnabled, progressIndeterminate, seekEnabled).forEach { it.setOnCheckedChangeListener { _, _ -> updateKind() }}
         updateKind()
         refreshStatus()
         root.requestFocus()
@@ -228,6 +250,14 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         progressEnabled = progressEnabled.isChecked,
         progressIndeterminate = progressIndeterminate.isChecked,
         progressText = progressField.text.toString(),
+        numberPickerEnabled = numberEnabled.isChecked,
+        numberMinText = numberMinField.text.toString(),
+        numberMaxText = numberMaxField.text.toString(),
+        numberValueText = numberValueField.text.toString(),
+        seekBarEnabled = seekEnabled.isChecked,
+        seekMinText = seekMinField.text.toString(),
+        seekMaxText = seekMaxField.text.toString(),
+        seekValueText = seekValueField.text.toString(),
         inputHint = hintField.text.toString(), inputDefault = defaultField.text.toString(),
         cancelable = cancelable.isChecked, delayText = delayField.text.toString(),
     )
@@ -239,6 +269,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         inputSection.visibility = if (textInputEnabled.isChecked) View.VISIBLE else View.GONE
         progressSection.visibility = if (progressEnabled.isChecked) View.VISIBLE else View.GONE
         progressValueSection.visibility = if (!progressIndeterminate.isChecked) View.VISIBLE else View.GONE
+        numberSection.visibility = if (numberEnabled.isChecked) View.VISIBLE else View.GONE
+        seekSection.visibility = if (seekEnabled.isChecked) View.VISIBLE else View.GONE
         errorText.visibility = View.GONE
     }
 
@@ -352,7 +384,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         backgroundTintList = null
         setPaddingRelative(0, 0, dp(24), 0)
         adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_selection, resources.getStringArray(entries))
-        (adapter as ArrayAdapter<*>).setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        (adapter as ArrayAdapter<*>).setDropDownViewResource(R.layout.spinner_dropdown)
         setSelection(selected)
     }
 

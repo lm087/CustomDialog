@@ -14,6 +14,8 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.NumberPicker
+import android.widget.SeekBar
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
@@ -55,19 +57,44 @@ object NativeDialogs {
             setSelection(text.length)
         } else null
 
+        val number = if (config.numberPickerEnabled) NumberPicker(builder.context).apply {
+            id = R.id.dialog_number_picker
+            val range = requireNotNull(config.numberRange)
+            minValue = range.minimum
+            maxValue = range.maximum
+            value = range.initial
+            wrapSelectorWheel = false
+            contentDescription = context.getString(R.string.content_number_picker)
+        } else null
+        val seek = if (config.seekBarEnabled) SeekBar(builder.context).apply {
+            id = R.id.dialog_seek_bar
+            val range = requireNotNull(config.seekRange)
+            max = range.maximum - range.minimum
+            progress = range.initial - range.minimum
+            minimumHeight = dp(context, 48)
+        } else null
+
+        fun numberResult(): String? {
+            number?.clearFocus()
+            return number?.let { "NumberPicker: ${it.value}" }
+        }
+        fun seekResult(): String? = seek?.let { "SeekBar: ${it.progress + requireNotNull(config.seekRange).minimum}" }
+
         fun inputResult(): String? = input?.text?.toString()?.let { if (it.isEmpty()) "Empty input" else "Input: $it" }
         when (config.listMode) {
             ListMode.NONE -> Unit
-            ListMode.ITEMS -> builder.setItems(options.toTypedArray()) { _, index -> onResult(listOfNotNull("Selected: ${options[index]}", inputResult()).joinToString("\n"))}
+            ListMode.ITEMS -> builder.setItems(options.toTypedArray()) { _, index -> onResult(listOfNotNull("Selected: ${options[index]}", inputResult(), numberResult(), seekResult()).joinToString("\n"))}
             ListMode.SINGLE_CHOICE -> builder.setSingleChoiceItems(options.toTypedArray(), -1, null)
             ListMode.MULTI_CHOICE -> builder.setMultiChoiceItems(options.toTypedArray(), null as BooleanArray?, null)
         }
 
-        if (input != null || config.progressEnabled) {
+        if (input != null || config.progressEnabled || number != null || seek != null) {
             val container = LinearLayout(builder.context).apply {
                 orientation = LinearLayout.VERTICAL
+                clipToPadding = false
                 setPadding(dp(context, 24), dp(context, 8), dp(context, 24), dp(context, 8))
                 input?.let { addView(it, LinearLayout.LayoutParams(-1, -2)) }
+                number?.let { addView(it, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.CENTER_HORIZONTAL })}
                 if (config.progressEnabled) {
                     val bar = if (config.progressIndeterminate) ProgressBar(builder.context) else { ProgressBar(builder.context, null, android.R.attr.progressBarStyleHorizontal)}
                     bar.id = R.id.dialog_progress
@@ -86,7 +113,24 @@ object NativeDialogs {
                     }
                 }
             }
-            builder.setView(BoundedScrollView(builder.context).apply { addView(container) })
+            seek?.let { bar ->
+                val valueLabel = TextView(builder.context).apply {
+                    labelFor = R.id.dialog_seek_bar
+                    gravity = Gravity.END
+                    text = context.getString(R.string.seek_current, bar.progress + requireNotNull(config.seekRange).minimum, requireNotNull(config.seekRange).maximum)
+                }
+                container.addView(bar, LinearLayout.LayoutParams(-1, -2).apply {
+                    leftMargin = -bar.paddingLeft
+                    rightMargin = -bar.paddingRight
+                })
+                container.addView(valueLabel)
+                bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) { valueLabel.text = context.getString(R.string.seek_current, progress + requireNotNull(config.seekRange).minimum, requireNotNull(config.seekRange).maximum)}
+                    override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
+                    override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
+                })
+            }
+            builder.setView(BoundedScrollView(builder.context, if (number != null) 280 else 160).apply { addView(container) })
         }
 
         if (config.positiveLabel.isNotBlank()) {
@@ -103,7 +147,7 @@ object NativeDialogs {
                     }
                     else -> null
                 }
-                val results = listOfNotNull(selection, inputResult())
+                val results = listOfNotNull(selection, inputResult(), numberResult(), seekResult())
                 onResult(if (results.isEmpty()) buttonResult(config.positiveLabel) else results.joinToString("\n"))
             }
         }
@@ -167,9 +211,9 @@ object NativeDialogs {
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density + 0.5f).toInt()
 
     
-    private class BoundedScrollView(context: Context) : ScrollView(context) {
+    private class BoundedScrollView(context: Context, private val maximumDp: Int = 160) : ScrollView(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val maximumHeight = minOf(dp(context, 160), resources.displayMetrics.heightPixels / 4)
+            val maximumHeight = minOf(dp(context, maximumDp), resources.displayMetrics.heightPixels / 3)
             val parentLimit = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) {
                 maximumHeight
             } else {

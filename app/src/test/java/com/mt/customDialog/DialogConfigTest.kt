@@ -88,6 +88,30 @@ class DialogConfigTest {
         assertNotNull(DialogConfig(progressEnabled = true, cancelable = false, positiveLabel = "", negativeLabel = "", neutralLabel = "").validationError())
     }
 
+    @Test
+    fun numericControlsValidateRangesAndRequireConfirmation() {
+        val number = DialogConfig(numberPickerEnabled = true, numberMinText = "10", numberMaxText = "20", numberValueText = "15")
+        val seek = DialogConfig(seekBarEnabled = true, seekMinText = "10", seekMaxText = "20", seekValueText = "15")
+        assertNull(number.validationError())
+        assertNull(seek.validationError())
+        assertNull(number.copy(numberValueText = "10").validationError())
+        assertNull(seek.copy(seekValueText = "20").validationError())
+        assertNull(number.copy(numberMinText = "20", numberValueText = "20").validationError())
+        assertNull(seek.copy(seekMinText = "20", seekValueText = "20").validationError())
+        listOf("", "-1", "1.5", "1000001", "9999999999999999999999").forEach {
+            assertNotNull(number.copy(numberMinText = it).validationError())
+            assertNotNull(seek.copy(seekMaxText = it).validationError())
+        }
+        assertNotNull(number.copy(numberMinText = "21").validationError())
+        assertNotNull(seek.copy(seekMaxText = "9").validationError())
+        assertNotNull(number.copy(numberValueText = "21").validationError())
+        assertNotNull(seek.copy(seekValueText = "9").validationError())
+        assertNotNull(number.copy(positiveLabel = "").validationError())
+        assertNotNull(seek.copy(positiveLabel = "").validationError())
+        assertNull(number.copy(numberPickerEnabled = false, numberValueText = "bad").validationError())
+        assertNull(seek.copy(kind = DialogKind.DATE_PICKER_DIALOG, seekValueText = "bad").validationError())
+    }
+
     private val choiceKinds = listOf(
         ListMode.ITEMS,
         ListMode.SINGLE_CHOICE,
