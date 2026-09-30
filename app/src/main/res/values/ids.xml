@@ -13,7 +13,13 @@
     <item name="preview" type="id" />
     <item name="start" type="id" />
     <item name="cancel_pending" type="id" />
-    <item name="advanced" type="id" />
     <item name="scroll" type="id" />
     <item name="result" type="id" />
+    <item name="content_input" type="id" />
+    <item name="content_list" type="id" />
+    <item name="list_mode" type="id" />
+    <item name="content_progress" type="id" />
+    <item name="progress_indeterminate" type="id" />
+    <item name="progress_value" type="id" />
+    <item name="dialog_progress" type="id" />
 </resources>

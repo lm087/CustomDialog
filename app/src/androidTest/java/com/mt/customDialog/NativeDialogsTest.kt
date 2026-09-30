@@ -9,6 +9,8 @@ import android.content.res.Configuration
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.CheckBox
+import android.widget.ProgressBar
 import android.widget.ListView
 import android.widget.Spinner
 import android.widget.TextView
@@ -48,7 +50,8 @@ class NativeDialogsTest {
     @Test
     fun singleAndMultilineFieldsShareTextAndUnderlineSpacing() {
         scenario.onActivity { activity ->
-            activity.findViewById<Spinner>(R.id.kind).setSelection(DialogKind.ITEMS.ordinal)
+            activity.findViewById<Spinner>(R.id.kind).setSelection(DialogKind.ALERT_DIALOG.ordinal)
+            activity.findViewById<CheckBox>(R.id.content_list).isChecked = true
             activity.findViewById<EditText>(R.id.title).setText("Title")
             activity.findViewById<EditText>(R.id.message).setText("First\nSecond")
             activity.findViewById<EditText>(R.id.options).setText("One\nTwo\nThree")
@@ -81,7 +84,7 @@ class NativeDialogsTest {
                     setLocale(locale)
                     setLayoutDirection(locale)
                     fontScale = 1.3f
-                },
+                }
             )
             val english = deviceContext.englishContext()
             assertEquals("Cancel", english.getString(android.R.string.cancel))
@@ -91,14 +94,14 @@ class NativeDialogsTest {
     }
 
     @Test
-    fun allSevenKindsShowAsFrameworkDialogs() {
+    fun apiTypesShowAsFrameworkDialogs() {
         DialogKind.entries.forEach { kind ->
             show(DialogConfig(kind = kind))
             withDialog { dialog ->
                 assertTrue("$kind must show", dialog.isShowing)
                 when (kind) {
-                    DialogKind.DATE -> assertTrue(dialog is DatePickerDialog)
-                    DialogKind.TIME -> assertTrue(dialog is TimePickerDialog)
+                    DialogKind.DATE_PICKER_DIALOG -> assertTrue(dialog is DatePickerDialog)
+                    DialogKind.TIME_PICKER_DIALOG -> assertTrue(dialog is TimePickerDialog)
                     else -> assertTrue(dialog is AlertDialog)
                 }
                 assertEquals("OK", dialog.getButton(DialogInterface.BUTTON_POSITIVE).text.toString())
@@ -110,11 +113,10 @@ class NativeDialogsTest {
 
     @Test
     fun choiceDialogsKeepTitleMessageAndNativeRowsVisible() {
-        listOf(DialogKind.ITEMS, DialogKind.SINGLE_CHOICE, DialogKind.MULTI_CHOICE).forEach { kind ->
+        listOf(ListMode.ITEMS, ListMode.SINGLE_CHOICE, ListMode.MULTI_CHOICE).forEach { kind ->
             show(choiceConfig(kind))
             withDialog { dialog ->
-                val visibleText = textViews(dialog.window!!.decorView)
-                    .filter { it.isShown }.map { it.text.toString() }
+                val visibleText = textViews(dialog.window!!.decorView).filter { it.isShown }.map { it.text.toString() }
                 assertTrue("Title missing for $kind", "Choose a color" in visibleText)
                 assertTrue("Message missing for $kind", "Select items" in visibleText)
                 assertTrue("First native row missing for $kind", "Red" in visibleText)
@@ -126,7 +128,7 @@ class NativeDialogsTest {
 
     @Test
     fun simpleItemsSubmitImmediately() {
-        show(choiceConfig(DialogKind.ITEMS))
+        show(choiceConfig(ListMode.ITEMS))
         withDialog { tapRow(it.listView, 1) }
         instrumentation.waitForIdleSync()
         assertEquals(listOf("Selected: Green"), results)
@@ -135,7 +137,7 @@ class NativeDialogsTest {
 
     @Test
     fun singleChoiceSubmitsTheSelectedRow() {
-        show(choiceConfig(DialogKind.SINGLE_CHOICE))
+        show(choiceConfig(ListMode.SINGLE_CHOICE))
         withDialog {
             tapRow(it.listView, 1)
             assertEquals(1, it.listView.checkedItemPosition)
@@ -148,7 +150,7 @@ class NativeDialogsTest {
 
     @Test
     fun multipleChoiceSubmitsOnlyCheckedRows() {
-        show(choiceConfig(DialogKind.MULTI_CHOICE))
+        show(choiceConfig(ListMode.MULTI_CHOICE))
         withDialog {
             tapRow(it.listView, 0)
             tapRow(it.listView, 1)
@@ -163,7 +165,7 @@ class NativeDialogsTest {
 
     @Test
     fun textInputSubmitsEditedTextAndUsesConfiguredHint() {
-        show(DialogConfig(kind = DialogKind.TEXT_INPUT, inputHint = "Enter a note", inputDefault = "Default text"))
+        show(DialogConfig(textInputEnabled = true, inputHint = "Enter a note", inputDefault = "Default text"))
         withDialog {
             val input = it.findViewById<EditText>(android.R.id.edit)
             assertEquals("Enter a note", input.hint.toString())
@@ -190,7 +192,7 @@ class NativeDialogsTest {
 
     @Test
     fun nativePickerButtonsKeepCustomLabelsAndPickerCallbacks() {
-        show(DialogConfig(kind = DialogKind.DATE, positiveLabel = "Select date", negativeLabel = "Back"))
+        show(DialogConfig(kind = DialogKind.DATE_PICKER_DIALOG, positiveLabel = "Select date", negativeLabel = "Back"))
         withDialog {
             assertEquals("Select date", it.getButton(DialogInterface.BUTTON_POSITIVE).text.toString())
             assertEquals("Back", it.getButton(DialogInterface.BUTTON_NEGATIVE).text.toString())
@@ -200,7 +202,7 @@ class NativeDialogsTest {
         instrumentation.waitForIdleSync()
         assertEquals(listOf("Date: 2030/01/02"), results)
 
-        show(DialogConfig(kind = DialogKind.TIME, positiveLabel = "Select time", negativeLabel = ""))
+        show(DialogConfig(kind = DialogKind.TIME_PICKER_DIALOG, positiveLabel = "Select time", negativeLabel = ""))
         withDialog {
             assertEquals("Select time", it.getButton(DialogInterface.BUTTON_POSITIVE).text.toString())
             assertEquals(View.GONE, it.getButton(DialogInterface.BUTTON_NEGATIVE).visibility)
@@ -231,7 +233,7 @@ class NativeDialogsTest {
 
     @Test
     fun previewRecreationRestoresEditedTextAndCancelableSetting() {
-        showPreview(DialogConfig(kind = DialogKind.TEXT_INPUT, inputDefault = "Original text", cancelable = false))
+        showPreview(DialogConfig(textInputEnabled = true, inputDefault = "Original text", cancelable = false))
         withPreview { dialog ->
             dialog.findViewById<EditText>(android.R.id.edit).setText("Keep after rotation")
         }
@@ -248,7 +250,7 @@ class NativeDialogsTest {
 
     @Test
     fun previewRecreationRestoresSingleChoice() {
-        showPreview(choiceConfig(DialogKind.SINGLE_CHOICE))
+        showPreview(choiceConfig(ListMode.SINGLE_CHOICE))
         withPreview { tapRow(it.listView, 2) }
         scenario.recreate()
         withPreview {
@@ -261,7 +263,7 @@ class NativeDialogsTest {
 
     @Test
     fun previewRecreationRestoresMultipleChoicesAndAllowsFurtherChanges() {
-        showPreview(choiceConfig(DialogKind.MULTI_CHOICE))
+        showPreview(choiceConfig(ListMode.MULTI_CHOICE))
         withPreview {
             tapRow(it.listView, 0)
             tapRow(it.listView, 2)
@@ -277,6 +279,82 @@ class NativeDialogsTest {
         }
         instrumentation.waitForIdleSync()
         scenario.onActivity { assertEquals("Selected: Green, Blue", DialogState.snapshot(it).result) }
+    }
+
+    @Test
+    fun combinedContentRestoresInputAndSelectionsTogether() {
+        showPreview(choiceConfig(ListMode.MULTI_CHOICE).copy(textInputEnabled = true,
+            inputDefault = "Original", progressEnabled = true, progressIndeterminate = false, progressText = "65"))
+        withPreview {
+            assertTrue(it.findViewById<ProgressBar>(R.id.dialog_progress).isShown)
+            assertEquals(65, it.findViewById<ProgressBar>(R.id.dialog_progress).progress)
+            it.findViewById<EditText>(android.R.id.edit).setText("Edited")
+            tapRow(it.listView, 1)
+        }
+        scenario.recreate()
+        withPreview {
+            assertTrue(it.listView.isItemChecked(1))
+            assertEquals("Edited", it.findViewById<EditText>(android.R.id.edit).text.toString())
+            it.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        }
+        instrumentation.waitForIdleSync()
+        scenario.onActivity { assertEquals("Selected: Green\nInput: Edited", DialogState.snapshot(it).result) }
+    }
+
+    @Test
+    fun progressContentSupportsBothModesAndKeepsDismissButtons() {
+        listOf(true, false).forEach { indeterminate ->
+            show(DialogConfig(progressEnabled = true, progressIndeterminate = indeterminate, progressText = "42"))
+            withDialog {
+                val bar = it.findViewById<ProgressBar>(R.id.dialog_progress)
+                assertTrue(bar.isShown)
+                assertEquals(indeterminate, bar.isIndeterminate)
+                if (!indeterminate) assertEquals(42, bar.progress)
+                assertTrue(it.getButton(DialogInterface.BUTTON_NEGATIVE).isShown)
+                it.dismiss()
+            }
+        }
+    }
+
+    @Test
+    fun customContentRoundTripsThroughBundlesAndDrafts() {
+        val config = choiceConfig(ListMode.SINGLE_CHOICE).copy(textInputEnabled = true,
+            inputDefault = "Saved", progressEnabled = true, progressIndeterminate = false, progressText = "73")
+        assertEquals(config, config.toBundle().toDialogConfig())
+        scenario.onActivity {
+            val previous = loadDraft(it)
+            try {
+                config.saveDraft(it)
+                assertEquals(config, loadDraft(it))
+            } finally {
+                previous.saveDraft(it)
+            }
+        }
+    }
+
+    @Test
+    fun editorKeepsContentWhenSwitchingApiTypesAndRecreating() {
+        scenario.onActivity {
+            listOf(R.id.positive, R.id.negative, R.id.neutral, R.id.cancelable).forEach { id -> assertTrue(it.findViewById<View>(id).isShown)}
+            assertEquals(listOf("AlertDialog", "DatePickerDialog", "TimePickerDialog"), it.resources.getStringArray(R.array.dialog_types).toList())
+            it.findViewById<CheckBox>(R.id.content_input).isChecked = true
+            it.findViewById<CheckBox>(R.id.content_list).isChecked = true
+            it.findViewById<Spinner>(R.id.list_mode).setSelection(ListMode.MULTI_CHOICE.ordinal - 1)
+            it.findViewById<Spinner>(R.id.kind).setSelection(DialogKind.DATE_PICKER_DIALOG.ordinal)
+        }
+        instrumentation.waitForIdleSync()
+        scenario.onActivity { assertFalse(it.findViewById<CheckBox>(R.id.content_list).isShown) }
+        scenario.recreate()
+        scenario.onActivity {
+            assertEquals(DialogKind.DATE_PICKER_DIALOG.ordinal, it.findViewById<Spinner>(R.id.kind).selectedItemPosition)
+            it.findViewById<Spinner>(R.id.kind).setSelection(DialogKind.ALERT_DIALOG.ordinal)
+        }
+        instrumentation.waitForIdleSync()
+        scenario.onActivity {
+            assertTrue(it.findViewById<CheckBox>(R.id.content_input).isChecked)
+            assertTrue(it.findViewById<CheckBox>(R.id.content_list).isChecked)
+            assertEquals(ListMode.MULTI_CHOICE.ordinal - 1, it.findViewById<Spinner>(R.id.list_mode).selectedItemPosition)
+        }
     }
 
     private fun show(config: DialogConfig) {
@@ -306,8 +384,8 @@ class NativeDialogsTest {
         }
     }
 
-    private fun choiceConfig(kind: DialogKind) = DialogConfig(
-        kind = kind,
+    private fun choiceConfig(kind: ListMode) = DialogConfig(
+        listMode = kind,
         title = "Choose a color",
         message = "Select items",
         optionsText = "Red\nGreen\nBlue",

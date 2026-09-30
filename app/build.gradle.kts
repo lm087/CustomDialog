@@ -12,8 +12,8 @@ android {
         applicationId = "com.mt.customDialog"
         minSdk = 23
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.0.0"
+        versionCode = 7
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

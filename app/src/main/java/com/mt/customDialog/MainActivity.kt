@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.graphics.drawable.InsetDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,6 +26,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -39,6 +41,15 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     override fun attachBaseContext(newBase: Context) { super.attachBaseContext(newBase.englishContext())}
 
     private lateinit var kind: Spinner
+    private lateinit var contentSection: LinearLayout
+    private lateinit var listEnabled: CheckBox
+    private lateinit var listMode: Spinner
+    private lateinit var textInputEnabled: CheckBox
+    private lateinit var progressEnabled: CheckBox
+    private lateinit var progressSection: LinearLayout
+    private lateinit var progressIndeterminate: CheckBox
+    private lateinit var progressValueSection: LinearLayout
+    private lateinit var progressField: EditText
     private lateinit var titleField: EditText
     private lateinit var messageField: EditText
     private lateinit var optionsField: EditText
@@ -51,14 +62,11 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var cancelable: Switch
     private lateinit var optionsSection: LinearLayout
     private lateinit var inputSection: LinearLayout
-    private lateinit var advancedSection: LinearLayout
-    private lateinit var advancedButton: Button
     private lateinit var startButton: Button
     private lateinit var previewButton: Button
     private lateinit var cancelButton: Button
     private lateinit var statusText: TextView
     private lateinit var errorText: TextView
-    private var advancedOpen = false
     private var awaitingPermission: DialogConfig? = null
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = object : Runnable {
@@ -73,7 +81,6 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
         val draft = savedInstanceState?.getBundle("draft")?.toDialogConfig() ?: loadDraft(this)
-        advancedOpen = savedInstanceState?.getBoolean("advanced") ?: false
         awaitingPermission = savedInstanceState?.getBundle("awaiting")?.toDialogConfig()
         buildForm(draft)
         if (!OverlayDialogService.isRunning && DialogState.snapshot(this).status != DialogState.IDLE) DialogState.finish(this, getString(R.string.countdown_stopped))
@@ -125,38 +132,39 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         form.addView(label(getString(R.string.dialog_type), 16f, bold = true))
-        kind = Spinner(this).apply {
-            id = R.id.kind
-            minimumHeight = dp(48)
-            adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_selection, resources.getStringArray(R.array.dialog_types))
-            (adapter as ArrayAdapter<*>).setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            setSelection(config.kind.ordinal)
-        }
+        kind = selectionSpinner(R.id.kind, R.array.dialog_types, config.kind.ordinal)
         form.addView(kind)
         titleField = field(form, getString(R.string.dialog_title), config.title, R.id.title)
         messageField = field(form, getString(R.string.dialog_message), config.message, R.id.message, multiline = true)
-        optionsSection = column()
-        optionsField = field(optionsSection, getString(R.string.dialog_items), config.optionsText, R.id.options, multiline = true)
-        form.addView(optionsSection)
+        contentSection = column()
+        contentSection.addView(sectionHeading(R.string.dialog_content))
+        textInputEnabled = contentToggle(contentSection, R.string.content_input, R.id.content_input, config.textInputEnabled)
         inputSection = column()
         hintField = field(inputSection, getString(R.string.input_hint), config.inputHint, R.id.input_hint)
         defaultField = field(inputSection, getString(R.string.input_default), config.inputDefault, R.id.input_default, multiline = true)
-        form.addView(inputSection)
+        contentSection.addView(inputSection)
+        listEnabled = contentToggle(contentSection, R.string.content_list, R.id.content_list, config.listMode != ListMode.NONE)
+        optionsSection = column()
+        optionsSection.addView(label(getString(R.string.list_mode), 14f, secondary = true))
+        listMode = selectionSpinner(R.id.list_mode, R.array.list_modes, (config.listMode.ordinal - 1).coerceAtLeast(0))
+        optionsSection.addView(listMode)
+        optionsField = field(optionsSection, getString(R.string.dialog_items), config.optionsText, R.id.options, multiline = true)
+        contentSection.addView(optionsSection)
+        progressEnabled = contentToggle(contentSection, R.string.content_progress, R.id.content_progress, config.progressEnabled)
+        progressSection = column()
+        progressIndeterminate = contentToggle(progressSection, R.string.progress_indeterminate, R.id.progress_indeterminate, config.progressIndeterminate)
+        progressValueSection = column()
+        progressField = field(progressValueSection, getString(R.string.progress_value), config.progressText, R.id.progress_value)
+        progressField.inputType = InputType.TYPE_CLASS_NUMBER
+        progressSection.addView(progressValueSection)
+        contentSection.addView(progressSection)
+        form.addView(contentSection)
 
-        advancedButton = Button(this, null, android.R.attr.borderlessButtonStyle).apply {
-            id = R.id.advanced
-            gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            setPaddingRelative(0, paddingTop, 0, paddingBottom)
-            setTextColor(AppTheme.accent(this@MainActivity))
-            isAllCaps = false
-            minHeight = dp(48)
-            setOnClickListener { advancedOpen = !advancedOpen; updateAdvanced()}
-        }
-        form.addView(advancedButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16)})
-        advancedSection = column()
-        positiveField = field(advancedSection, getString(R.string.positive_button), config.positiveLabel, R.id.positive)
-        negativeField = field(advancedSection, getString(R.string.negative_button), config.negativeLabel, R.id.negative)
-        neutralField = field(advancedSection, getString(R.string.neutral_button), config.neutralLabel, R.id.neutral)
+        form.addView(sectionHeading(R.string.buttons_behavior))
+        val buttonsSection = column()
+        positiveField = field(buttonsSection, getString(R.string.positive_button), config.positiveLabel, R.id.positive)
+        negativeField = field(buttonsSection, getString(R.string.negative_button), config.negativeLabel, R.id.negative)
+        neutralField = field(buttonsSection, getString(R.string.neutral_button), config.neutralLabel, R.id.neutral)
         cancelable = Switch(this).apply {
             id = R.id.cancelable
             text = getString(R.string.cancelable)
@@ -165,9 +173,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             isChecked = config.cancelable
             setPadding(0, dp(8), 0, dp(8))
         }
-        advancedSection.addView(cancelable, LinearLayout.LayoutParams(-1, -2))
-        form.addView(advancedSection)
-        form.addView(timingHeading())
+        buttonsSection.addView(cancelable, LinearLayout.LayoutParams(-1, -2))
+        form.addView(buttonsSection)
+        form.addView(sectionHeading(R.string.timing))
         delayField = field(form, getString(R.string.delay_seconds), config.delayText, R.id.delay, hint = "0")
         delayField.inputType = InputType.TYPE_CLASS_NUMBER
         root.addView(divider())
@@ -204,8 +212,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = updateKind()
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
+        listOf(listEnabled, textInputEnabled, progressEnabled, progressIndeterminate).forEach { it.setOnCheckedChangeListener { _, _ -> updateKind() }}
         updateKind()
-        updateAdvanced()
         refreshStatus()
         root.requestFocus()
     }
@@ -215,21 +223,23 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         title = titleField.text.toString(), message = messageField.text.toString(),
         positiveLabel = positiveField.text.toString(), negativeLabel = negativeField.text.toString(),
         neutralLabel = neutralField.text.toString(), optionsText = optionsField.text.toString(),
+        listMode = if (listEnabled.isChecked) ListMode.entries[listMode.selectedItemPosition.coerceAtLeast(0) + 1] else ListMode.NONE,
+        textInputEnabled = textInputEnabled.isChecked,
+        progressEnabled = progressEnabled.isChecked,
+        progressIndeterminate = progressIndeterminate.isChecked,
+        progressText = progressField.text.toString(),
         inputHint = hintField.text.toString(), inputDefault = defaultField.text.toString(),
         cancelable = cancelable.isChecked, delayText = delayField.text.toString(),
     )
 
     private fun updateKind() {
         val selected = DialogKind.entries[kind.selectedItemPosition.coerceAtLeast(0)]
-        optionsSection.visibility = if (selected in listOf(DialogKind.ITEMS, DialogKind.SINGLE_CHOICE, DialogKind.MULTI_CHOICE)) View.VISIBLE else View.GONE
-        inputSection.visibility = if (selected == DialogKind.TEXT_INPUT) View.VISIBLE else View.GONE
+        contentSection.visibility = if (selected == DialogKind.ALERT_DIALOG) View.VISIBLE else View.GONE
+        optionsSection.visibility = if (listEnabled.isChecked) View.VISIBLE else View.GONE
+        inputSection.visibility = if (textInputEnabled.isChecked) View.VISIBLE else View.GONE
+        progressSection.visibility = if (progressEnabled.isChecked) View.VISIBLE else View.GONE
+        progressValueSection.visibility = if (!progressIndeterminate.isChecked) View.VISIBLE else View.GONE
         errorText.visibility = View.GONE
-    }
-
-    private fun updateAdvanced() {
-        advancedSection.visibility = if (advancedOpen) View.VISIBLE else View.GONE
-        advancedButton.text = if (advancedOpen) getString(R.string.hide_buttons_behavior) else getString(R.string.buttons_behavior)
-        if (Build.VERSION.SDK_INT >= 30) advancedButton.stateDescription = if (advancedOpen) getString(R.string.expanded) else getString(R.string.collapsed)
     }
 
     private fun validated(preview: Boolean): DialogConfig? {
@@ -329,12 +339,34 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBundle("draft", readConfig().toBundle())
-        outState.putBoolean("advanced", advancedOpen)
         awaitingPermission?.let { outState.putBundle("awaiting", it.toBundle())}
         super.onSaveInstanceState(outState)
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) = refreshStatus()
+
+    private fun selectionSpinner(viewId: Int, entries: Int, selected: Int) = Spinner(this).apply {
+        id = viewId
+        minimumHeight = dp(48)
+        background = getDrawable(R.drawable.spinner_background)
+        backgroundTintList = null
+        setPaddingRelative(0, 0, dp(24), 0)
+        adapter = ArrayAdapter(this@MainActivity, R.layout.spinner_selection, resources.getStringArray(entries))
+        (adapter as ArrayAdapter<*>).setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        setSelection(selected)
+    }
+
+    private fun contentToggle(parent: LinearLayout, label: Int, viewId: Int, checked: Boolean) = CheckBox(this).apply {
+        id = viewId
+        buttonDrawable = InsetDrawable(getDrawable(R.drawable.checkbox), 0, 0, dp(12), 0)
+        buttonTintList = null
+        setPaddingRelative(0, 0, 0, 0)
+        setText(label)
+        textSize = 16f
+        minimumHeight = dp(48)
+        isChecked = checked
+        parent.addView(this, LinearLayout.LayoutParams(-1, -2))
+    }
 
     private fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
@@ -344,7 +376,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         if (bold) setTypeface(typeface, Typeface.BOLD)
         setLineSpacing(dp(3).toFloat(), 1f)
     }
-    private fun timingHeading() = label(getString(R.string.timing), 16f, bold = true).apply {
+    private fun sectionHeading(labelId: Int) = label(getString(labelId), 16f, bold = true).apply {
         setPadding(0, dp(20), 0, dp(8))
         accessibilityHeadingCompat()
     }

@@ -33,12 +33,8 @@ class OverlayDialogServiceTest {
     fun prepareService() {
         originalOverlayAllowed = Settings.canDrawOverlays(context)
         originalAccessibilityFlags = automation.serviceInfo.flags
-        automation.serviceInfo = automation.serviceInfo.apply {
-            flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-        }
-        instrumentation.runOnMainSync {
-            context.stopService(Intent(context, OverlayDialogService::class.java))
-        }
+        automation.serviceInfo = automation.serviceInfo.apply { flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS }
+        instrumentation.runOnMainSync { context.stopService(Intent(context, OverlayDialogService::class.java))}
         awaitState("Previous service must stop") { _, running -> !running }
         setOverlayAllowed(true)
         scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -48,9 +44,7 @@ class OverlayDialogServiceTest {
     @After
     fun restoreServiceAndPermission() {
         try {
-            instrumentation.runOnMainSync {
-                context.stopService(Intent(context, OverlayDialogService::class.java))
-            }
+            instrumentation.runOnMainSync { context.stopService(Intent(context, OverlayDialogService::class.java))}
             awaitState("Service must stop during cleanup") { _, running -> !running }
         } finally {
             try {
@@ -59,9 +53,7 @@ class OverlayDialogServiceTest {
                 try {
                     setOverlayAllowed(originalOverlayAllowed)
                 } finally {
-                    automation.serviceInfo = automation.serviceInfo.apply {
-                        flags = originalAccessibilityFlags
-                    }
+                    automation.serviceInfo = automation.serviceInfo.apply { flags = originalAccessibilityFlags }
                 }
             }
         }
@@ -71,14 +63,10 @@ class OverlayDialogServiceTest {
     fun countdownSurvivesStoppedActivityAndShowsVisibleOverlay() {
         val title = "Overlay service background test"
         start(DialogConfig(title = title, delayText = "2"))
-        awaitState("Countdown should start") { state, running ->
-            state.status == DialogState.COUNTDOWN && running
-        }
+        awaitState("Countdown should start") { state, running -> state.status == DialogState.COUNTDOWN && running }
         scenario!!.moveToState(Lifecycle.State.CREATED)
 
-        awaitState("Stopped activity must not cancel its overlay") { state, running ->
-            state.status == DialogState.SHOWING && running
-        }
+        awaitState("Stopped activity must not cancel its overlay") { state, running -> state.status == DialogState.SHOWING && running }
         awaitOverlay(title)
     }
 
@@ -86,15 +74,9 @@ class OverlayDialogServiceTest {
     fun cancelPendingCountdownPreventsLaterOverlay() {
         val title = "Overlay service cancelled test"
         start(DialogConfig(title = title, delayText = "2"))
-        val countdown = awaitState("Countdown should start") { state, running ->
-            state.status == DialogState.COUNTDOWN && running
-        }
-        scenario!!.onActivity {
-            it.startService(Intent(it, OverlayDialogService::class.java).setAction(OverlayDialogService.ACTION_CANCEL))
-        }
-        awaitState("Cancel must stop the service") { state, running ->
-            state.status == DialogState.IDLE && state.result == "Cancelled" && !running
-        }
+        val countdown = awaitState("Countdown should start") { state, running -> state.status == DialogState.COUNTDOWN && running }
+        scenario!!.onActivity { it.startService(Intent(it, OverlayDialogService::class.java).setAction(OverlayDialogService.ACTION_CANCEL))}
+        awaitState("Cancel must stop the service") { state, running -> state.status == DialogState.IDLE && state.result == "Cancelled" && !running }
         do {
             instrumentation.runOnMainSync {
                 assertEquals(DialogState.IDLE, DialogState.snapshot(context).status)
@@ -109,34 +91,27 @@ class OverlayDialogServiceTest {
     fun deniedOverlayPermissionReturnsIdleWithoutLeavingServiceRunning() {
         setOverlayAllowed(false)
         start(DialogConfig())
-        awaitState("Denied overlay permission must fail cleanly") { state, running ->
-            state.status == DialogState.IDLE &&
-                state.result.contains("Allow display") && !running
+        awaitState("Denied overlay permission must fail cleanly") { state, running -> state.status == DialogState.IDLE && state.result.contains("Allow display") && !running
         }
     }
 
     @Test
     fun invalidDelayReturnsIdleWithoutLeavingServiceRunning() {
         start(DialogConfig(delayText = "-1"))
-        awaitState("Invalid delay must fail cleanly") { state, running ->
-            state.status == DialogState.IDLE &&
-                state.result.contains("Invalid dialog configuration") && !running
+        awaitState("Invalid delay must fail cleanly") { state, running -> state.status == DialogState.IDLE && state.result.contains("Invalid dialog configuration") && !running
         }
     }
 
     @Test
     fun missingConfigurationReturnsIdleWithoutLeavingServiceRunning() {
         start(null)
-        awaitState("Missing configuration must fail cleanly") { state, running ->
-            state.status == DialogState.IDLE &&
-                state.result.contains("Invalid dialog configuration") && !running
+        awaitState("Missing configuration must fail cleanly") { state, running -> state.status == DialogState.IDLE && state.result.contains("Invalid dialog configuration") && !running
         }
     }
 
     private fun start(config: DialogConfig?) {
         scenario!!.onActivity { activity ->
-            val intent = Intent(activity, OverlayDialogService::class.java)
-                .setAction(OverlayDialogService.ACTION_START)
+            val intent = Intent(activity, OverlayDialogService::class.java).setAction(OverlayDialogService.ACTION_START)
             if (config != null) intent.putExtra(OverlayDialogService.EXTRA_CONFIG, config.toBundle())
             if (Build.VERSION.SDK_INT >= 26) activity.startForegroundService(intent)
             else activity.startService(intent)
@@ -146,15 +121,11 @@ class OverlayDialogServiceTest {
     private fun setOverlayAllowed(allowed: Boolean) {
         val mode = if (allowed) "allow" else "deny"
         val command = "appops set ${context.packageName} SYSTEM_ALERT_WINDOW $mode"
-        ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
-            .bufferedReader().use { it.readText() }
+        ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).bufferedReader().use { it.readText() }
         assertEquals("Overlay app-op should be $mode", allowed, Settings.canDrawOverlays(context))
     }
 
-    private fun awaitState(
-        description: String,
-        predicate: (DialogState.Snapshot, Boolean) -> Boolean,
-    ): DialogState.Snapshot {
+    private fun awaitState(description: String, predicate: (DialogState.Snapshot, Boolean) -> Boolean): DialogState.Snapshot {
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         var state = DialogState.Snapshot(DialogState.IDLE, 0L, "")
         var running = false

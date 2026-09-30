@@ -27,22 +27,28 @@
     <string name="cancel" translatable="false">Cancel</string>
     <string name="in_app" translatable="false">In-App</string>
     <string name="cross_app" translatable="false">Cross-App</string>
-    <string name="hide_buttons_behavior" translatable="false">Hide buttons &amp; behavior</string>
     <string name="buttons_behavior" translatable="false">Buttons &amp; behavior</string>
-    <string name="expanded" translatable="false">Expanded</string>
-    <string name="collapsed" translatable="false">Collapsed</string>
     <string name="countdown_stopped" translatable="false">Previous countdown stopped.</string>
     <string name="overlay_permission_needed" translatable="false">Allow display over other apps, then tap Cross-App.</string>
     <string name="overlay_start_error" translatable="false">Cannot start overlay. Check permission and try again.</string>
     <string name="overlay_settings_error" translatable="false">Allow display over other apps in Android Settings.</string>
     <string name="dialog_showing" translatable="false">Dialog showing</string>
+    <string name="dialog_content" translatable="false">Content</string>
+    <string name="content_input" translatable="false">EditText</string>
+    <string name="content_list" translatable="false">List</string>
+    <string name="content_progress" translatable="false">ProgressBar</string>
+    <string name="list_mode" translatable="false">List mode</string>
+    <string name="progress_indeterminate" translatable="false">Indeterminate</string>
+    <string name="progress_percent" translatable="false">%1$d%%</string>
+    <string name="progress_value" translatable="false">Progress (0–100)</string>
     <string-array name="dialog_types" translatable="false">
         <item>AlertDialog</item>
-        <item>Items</item>
-        <item>Single choice</item>
-        <item>Multi choice</item>
-        <item>EditText</item>
         <item>DatePickerDialog</item>
         <item>TimePickerDialog</item>
+    </string-array>
+    <string-array name="list_modes" translatable="false">
+        <item>setItems</item>
+        <item>setMultiChoiceItems</item>
+        <item>setSingleChoiceItems</item>
     </string-array>
 </resources>

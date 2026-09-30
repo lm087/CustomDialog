@@ -9,11 +9,12 @@ import android.content.DialogInterface
 import android.os.Build
 import android.text.InputType
 import android.text.format.DateFormat
+import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import java.util.Calendar
@@ -22,8 +23,8 @@ import java.util.Locale
 object NativeDialogs {
     fun create(context: Context, config: DialogConfig, onResult: (String) -> Unit): Dialog {
         val dialog = when (config.kind) {
-            DialogKind.DATE -> createDatePicker(context, config, onResult)
-            DialogKind.TIME -> createTimePicker(context, config, onResult)
+            DialogKind.DATE_PICKER_DIALOG -> createDatePicker(context, config, onResult)
+            DialogKind.TIME_PICKER_DIALOG -> createTimePicker(context, config, onResult)
             else -> createAlert(context, config, onResult)
         }
         dialog.setCancelable(config.cancelable)
@@ -35,8 +36,7 @@ object NativeDialogs {
     private fun createAlert(context: Context, config: DialogConfig, onResult: (String) -> Unit): AlertDialog {
         val builder = AlertDialog.Builder(context)
         val options = config.options
-        val isChoiceDialog = config.kind == DialogKind.ITEMS || config.kind == DialogKind.SINGLE_CHOICE || config.kind == DialogKind.MULTI_CHOICE
-
+        val isChoiceDialog = config.listMode != ListMode.NONE
         if (isChoiceDialog) {
             metadataView(builder.context, config)?.let(builder::setCustomTitle)
         } else {
@@ -44,57 +44,73 @@ object NativeDialogs {
             if (config.message.isNotBlank()) builder.setMessage(config.message)
         }
 
-        var input: EditText? = null
-        when (config.kind) {
-            DialogKind.ITEMS -> builder.setItems(options.toTypedArray()) { _, index -> onResult("Selected: ${options[index]}")}
-            DialogKind.SINGLE_CHOICE -> builder.setSingleChoiceItems(options.toTypedArray(), -1, null)
-            DialogKind.MULTI_CHOICE -> builder.setMultiChoiceItems(options.toTypedArray(), null as BooleanArray?, null)
-            DialogKind.TEXT_INPUT -> {
-                input = EditText(builder.context).apply {
-                    id = android.R.id.edit
-                    hint = config.inputHint
-                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-                    minLines = 1
-                    maxLines = 5
-                    setText(config.inputDefault)
-                    setSelection(text.length)
+        val input = if (config.textInputEnabled) EditText(builder.context).apply {
+            id = android.R.id.edit
+            hint = config.inputHint
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 1
+            maxLines = 5
+            gravity = Gravity.TOP or Gravity.START
+            setText(config.inputDefault)
+            setSelection(text.length)
+        } else null
+
+        fun inputResult(): String? = input?.text?.toString()?.let { if (it.isEmpty()) "Empty input" else "Input: $it" }
+        when (config.listMode) {
+            ListMode.NONE -> Unit
+            ListMode.ITEMS -> builder.setItems(options.toTypedArray()) { _, index -> onResult(listOfNotNull("Selected: ${options[index]}", inputResult()).joinToString("\n"))}
+            ListMode.SINGLE_CHOICE -> builder.setSingleChoiceItems(options.toTypedArray(), -1, null)
+            ListMode.MULTI_CHOICE -> builder.setMultiChoiceItems(options.toTypedArray(), null as BooleanArray?, null)
+        }
+
+        if (input != null || config.progressEnabled) {
+            val container = LinearLayout(builder.context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(context, 24), dp(context, 8), dp(context, 24), dp(context, 8))
+                input?.let { addView(it, LinearLayout.LayoutParams(-1, -2)) }
+                if (config.progressEnabled) {
+                    val bar = if (config.progressIndeterminate) ProgressBar(builder.context) else { ProgressBar(builder.context, null, android.R.attr.progressBarStyleHorizontal)}
+                    bar.id = R.id.dialog_progress
+                    bar.isIndeterminate = config.progressIndeterminate
+                    bar.max = 100
+                    bar.progress = config.progressValue ?: 0
+                    addView(bar, LinearLayout.LayoutParams(if (config.progressIndeterminate) -2 else -1, dp(context, 48)).apply {
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        if (input != null) topMargin = dp(context, 12)
+                    })
+                    if (!config.progressIndeterminate) {
+                        addView(TextView(builder.context).apply {
+                            text = context.getString(R.string.progress_percent, bar.progress)
+                            gravity = Gravity.END
+                        })
+                    }
                 }
-                val container = LinearLayout(builder.context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(context, 24), dp(context, 8), dp(context, 24), 0)
-                    addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-                }
-                builder.setView(container)
             }
-            else -> Unit
+            builder.setView(BoundedScrollView(builder.context).apply { addView(container) })
         }
 
         if (config.positiveLabel.isNotBlank()) {
             builder.setPositiveButton(config.positiveLabel) { dialog, _ ->
-                val result = when (config.kind) {
-                    DialogKind.SINGLE_CHOICE -> {
+                val selection = when (config.listMode) {
+                    ListMode.SINGLE_CHOICE -> {
                         val selected = (dialog as AlertDialog).listView.checkedItemPosition
                         options.getOrNull(selected)?.let { "Selected: $it" } ?: "No selection"
                     }
-                    DialogKind.MULTI_CHOICE -> {
+                    ListMode.MULTI_CHOICE -> {
                         val list = (dialog as AlertDialog).listView
                         val selected = options.filterIndexed { index, _ -> list.isItemChecked(index) }
-                        if (selected.isEmpty()) "No selection"
-                        else "Selected: ${selected.joinToString(", ")}"
+                        if (selected.isEmpty()) "No selection" else "Selected: ${selected.joinToString(", ")}"
                     }
-                    DialogKind.TEXT_INPUT -> {
-                        val value = input?.text?.toString().orEmpty()
-                        if (value.isEmpty()) "Empty input" else "Input: $value"
-                    }
-                    else -> buttonResult(config.positiveLabel)
+                    else -> null
                 }
-                onResult(result)
+                val results = listOfNotNull(selection, inputResult())
+                onResult(if (results.isEmpty()) buttonResult(config.positiveLabel) else results.joinToString("\n"))
             }
         }
-        if (config.negativeLabel.isNotBlank()) builder.setNegativeButton(config.negativeLabel) { _, _ -> onResult(buttonResult(config.negativeLabel))}
-        if (config.neutralLabel.isNotBlank()) builder.setNeutralButton(config.neutralLabel) { _, _ -> onResult(buttonResult(config.neutralLabel))}
+        if (config.negativeLabel.isNotBlank()) builder.setNegativeButton(config.negativeLabel) { _, _ -> onResult(buttonResult(config.negativeLabel)) }
+        if (config.neutralLabel.isNotBlank()) builder.setNeutralButton(config.neutralLabel) { _, _ -> onResult(buttonResult(config.neutralLabel)) }
         return builder.create().apply {
-            if (config.kind == DialogKind.TEXT_INPUT) {
+            if (input != null) {
                 @Suppress("DEPRECATION")
                 window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             }
