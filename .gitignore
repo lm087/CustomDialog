@@ -1,31 +1,40 @@
-# Agents
-.impeccable/
-.agents/
-.codex/
+# Build output and caches
+build/
+.gradle/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+
+# Android packages
+*.apk
+*.apk.idsig
+*.aab
+*.apks
+
+# Local configuration and signing keys
+local.properties
+keystore.properties
+signing.properties
+*.jks
+*.keystore
 .env
 .env.*
 !.env.example
 
-# Editors
-build/
-.gradle/
-.kotlin/
+# IDE settings
 .idea/
 .vscode/
-.externalNativeBuild/
-.cxx/
+*.iml
+
+# Local agent configuration
+.impeccable/
+.agents/
+.codex/
+
+# Captures and profiling output
 captures/
 screenshots/
-local.properties
-keystore.properties
-signing.properties
-*.iml
-*.apk
-*.aab
-*.apks
-*.jks
-*.keystore
 *.hprof
 
-# macOS
+# macOS metadata
 .DS_Store
