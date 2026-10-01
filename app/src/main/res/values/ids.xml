@@ -32,4 +32,5 @@
     <item name="seek_min" type="id" />
     <item name="seek_max" type="id" />
     <item name="seek_value" type="id" />
+    <item name="settings_scroll" type="id" />
 </resources>

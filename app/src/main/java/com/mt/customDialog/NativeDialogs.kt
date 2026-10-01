@@ -32,6 +32,15 @@ object NativeDialogs {
         dialog.setCancelable(config.cancelable)
         dialog.setCanceledOnTouchOutside(config.cancelable)
         dialog.setOnCancelListener { onResult("Dismissed") }
+        dialog.setOnShowListener {
+            fun updateWidth() {
+                val window = dialog.window ?: return
+                val width = dp(window.context, (window.context.resources.configuration.screenWidthDp - 32).coerceIn(1, 560))
+                if (window.attributes.width != width) window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+            }
+            updateWidth()
+            dialog.window?.decorView?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateWidth() }
+        }
         return dialog
     }
 
@@ -131,7 +140,7 @@ object NativeDialogs {
                     override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
                 })
             }
-            builder.setView(BoundedScrollView(builder.context, if (number != null) 280 else 160).apply { addView(container) })
+            builder.setView(BoundedScrollView(builder.context, if (isChoiceDialog) 280 else 480, if (isChoiceDialog) 0.35f else 0.6f, if (isChoiceDialog) 320 else 240).apply { addView(container) })
         }
 
         if (config.positiveLabel.isNotBlank()) {
@@ -212,9 +221,11 @@ object NativeDialogs {
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density + 0.5f).toInt()
 
     
-    private class BoundedScrollView(context: Context, private val maximumDp: Int = 160) : ScrollView(context) {
+    private class BoundedScrollView(context: Context, private val maximumDp: Int = 160, private val heightFraction: Float = 0.25f, private val reservedDp: Int = 0) : ScrollView(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val maximumHeight = minOf(dp(context, maximumDp), resources.displayMetrics.heightPixels / 3)
+            val availableHeight = dp(context, resources.configuration.screenHeightDp)
+            val reservedHeight = (dp(context, reservedDp) * resources.configuration.fontScale).toInt()
+            val maximumHeight = minOf(dp(context, maximumDp), (availableHeight * heightFraction).toInt(), (availableHeight - reservedHeight).coerceAtLeast(dp(context, 48)))
             val parentLimit = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) {
                 maximumHeight
             } else {

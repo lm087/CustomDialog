@@ -93,10 +93,17 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     }
 
     private fun buildForm(config: DialogConfig) {
+        val expanded = resources.configuration.screenWidthDp / resources.configuration.fontScale >= 840
         val frame = FrameLayout(this).apply { setBackgroundColor(getColor(R.color.surface))}
         val root = column().apply { isFocusableInTouchMode = true }
         frame.addView(root, FrameLayout.LayoutParams(-1, -1, Gravity.TOP or Gravity.CENTER_HORIZONTAL))
-        frame.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ -> if (right - left != oldRight - oldLeft) root.layoutParams = (root.layoutParams as FrameLayout.LayoutParams).apply { width = minOf(right - left - frame.paddingLeft - frame.paddingRight, dp(640))}}
+        fun updateWidth() {
+            val available = frame.width - frame.paddingLeft - frame.paddingRight
+            if (available <= 0) return
+            val width = minOf(available, dp(if (expanded) 1120 else 640))
+            if (root.layoutParams.width != width) root.layoutParams = (root.layoutParams as FrameLayout.LayoutParams).apply { this.width = width }
+        }
+        frame.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateWidth() }
         frame.setOnApplyWindowInsetsListener { view, insets ->
             if (Build.VERSION.SDK_INT >= 30) {
                 val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout() or WindowInsets.Type.ime())
@@ -104,6 +111,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             } else {
                 view.setPadding(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             }
+            updateWidth()
             insets
         }
         setContentView(frame)
@@ -135,7 +143,18 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         val scroll = ScrollView(this).apply { id = R.id.scroll; isFillViewport = true }
         val form = column().apply { setPadding(dp(20), dp(16), dp(20), dp(16))}
         scroll.addView(form)
-        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val body = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        body.addView(scroll, LinearLayout.LayoutParams(0, -1, 1f))
+        val settingsForm = if (expanded) column().apply { setPadding(dp(20), dp(16), dp(20), dp(16)) } else form
+        if (expanded) {
+            body.addView(divider(), LinearLayout.LayoutParams(dp(1), -1))
+            body.addView(ScrollView(this).apply {
+                id = R.id.settings_scroll
+                isFillViewport = true
+                addView(settingsForm)
+            }, LinearLayout.LayoutParams(0, -1, 1f))
+        }
+        root.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
 
         form.addView(label(getString(R.string.dialog_type), 16f, bold = true))
         kind = selectionSpinner(R.id.kind, R.array.dialog_types, config.kind.ordinal)
@@ -178,7 +197,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         contentSection.addView(seekSection)
         form.addView(contentSection)
 
-        form.addView(sectionHeading(R.string.buttons_behavior))
+        settingsForm.addView(sectionHeading(R.string.buttons_behavior).apply { if (expanded) setPadding(0, 0, 0, dp(8))})
         val buttonsSection = column()
         positiveField = field(buttonsSection, getString(R.string.positive_button), config.positiveLabel, R.id.positive)
         negativeField = field(buttonsSection, getString(R.string.negative_button), config.negativeLabel, R.id.negative)
@@ -192,9 +211,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             setPadding(0, dp(8), 0, dp(8))
         }
         buttonsSection.addView(cancelable, LinearLayout.LayoutParams(-1, -2))
-        form.addView(buttonsSection)
-        form.addView(sectionHeading(R.string.timing))
-        delayField = field(form, getString(R.string.delay_seconds), config.delayText, R.id.delay, hint = "0")
+        settingsForm.addView(buttonsSection)
+        settingsForm.addView(sectionHeading(R.string.timing))
+        delayField = field(settingsForm, getString(R.string.delay_seconds), config.delayText, R.id.delay, hint = "0")
         delayField.inputType = InputType.TYPE_CLASS_NUMBER
         root.addView(divider())
         val footer = column().apply { setPadding(dp(16), dp(8), dp(16), dp(8))}
