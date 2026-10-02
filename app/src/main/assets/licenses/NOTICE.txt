@@ -1,0 +1,19 @@
+Custom Dialog
+Copyright (c) 2026 Limo
+Project-authored code and resources are licensed under the MIT License.
+See MIT.txt.
+
+Third-party components retain their original licenses and ownership.
+
+Kotlin standard library 2.2.10
+Copyright 2010-2024 JetBrains s.r.o and respective authors and developers
+License: Apache License, Version 2.0 (see Apache-2.0.txt)
+Source: https://github.com/JetBrains/kotlin/tree/v2.2.10/libraries/stdlib
+Upstream notice: https://github.com/JetBrains/kotlin/blob/v2.2.10/license/NOTICE.txt
+
+JetBrains annotations 13.0
+JetBrains s.r.o.
+License: Apache License, Version 2.0 (see Apache-2.0.txt)
+Source: https://github.com/JetBrains/java-annotations
+This is a transitive runtime dependency of kotlin-stdlib; unused code may
+be removed by release optimization.
